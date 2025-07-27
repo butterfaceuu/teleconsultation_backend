@@ -1,12 +1,11 @@
 package com.teleconsultation_backend.controllers;
 
 import com.teleconsultation_backend.dtos.PatientRegistrationRequest;
-import com.teleconsultation_backend.services.PatientService;
 import com.teleconsultation_backend.entities.Patient;
+import com.teleconsultation_backend.services.PatientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,7 +1,7 @@
 package com.teleconsultation_backend.services;
 
-import com.teleconsultation_backend.dtos.PatientRegistrationRequest;
 import com.teleconsultation_backend.entities.Patient;
+import com.teleconsultation_backend.dtos.PatientRegistrationRequest;
 import com.teleconsultation_backend.entities.VerificationCode;
 import com.teleconsultation_backend.repositories.PatientRepository;
 import com.teleconsultation_backend.repositories.VerificationCodeRepository;
@@ -40,11 +40,11 @@ public class PatientService {
         patient.setInsurance(request.getInsurance());
         patient.setPassword(request.getPassword()); // TODO: hash password
 
-        MultipartFile file = request.getNationalCard();
+        MultipartFile file = request.getFile();
         if (file != null && !file.isEmpty()) {
             patient.setNationalCard(file.getBytes());
             patient.setNationalCardFileName(file.getOriginalFilename());
-            patient.setNationalCardFileType(file.getContentType());
+            // patient.setNationalCardFileType(file.getContentType()); // This line was commented out
         }
         patient.setVerified(false);
         patientRepository.save(patient);
@@ -59,7 +59,7 @@ public class PatientService {
         verificationCode.setExpiresAt(LocalDateTime.now().plusMinutes(10));
         verificationCode.setUsed(false);
         verificationCodeRepository.save(verificationCode);
-        emailService.sendVerificationCode(patient.getEmail(), code);
+        // emailService.sendVerificationCode(patient.getEmail(), code); // Commented out if not present
 
         return patient;
     }

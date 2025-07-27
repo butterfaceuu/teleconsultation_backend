@@ -1,13 +1,13 @@
 package com.teleconsultation_backend.services;
 
-import com.teleconsultation_backend.dtos.PractitionerRegistrationRequest;
-import com.teleconsultation_backend.entities.Practitioner;
-import com.teleconsultation_backend.entities.VerificationCode;
 import com.teleconsultation_backend.repositories.PractitionerRepository;
 import com.teleconsultation_backend.repositories.VerificationCodeRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.teleconsultation_backend.entities.Practitioner;
+import com.teleconsultation_backend.dtos.PractitionerRegistrationRequest;
+import com.teleconsultation_backend.entities.VerificationCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,12 +16,19 @@ import java.util.UUID;
 
 @Service
 public class PractitionerService {
+    private final PractitionerRepository practitionerRepository;
+    private final VerificationCodeRepository verificationCodeRepository;
+    private final EmailService emailService;
+
     @Autowired
-    private PractitionerRepository practitionerRepository;
-    @Autowired
-    private VerificationCodeRepository verificationCodeRepository;
-    @Autowired
-    private EmailService emailService;
+    public PractitionerService(
+            PractitionerRepository practitionerRepository,
+            VerificationCodeRepository verificationCodeRepository,
+            EmailService emailService) {
+        this.practitionerRepository = practitionerRepository;
+        this.verificationCodeRepository = verificationCodeRepository;
+        this.emailService = emailService;
+    }
 
     public Practitioner registerPractitioner(PractitionerRegistrationRequest request) throws Exception {
         if (practitionerRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -37,13 +44,13 @@ public class PractitionerService {
         practitioner.setSource(request.getSource());
         practitioner.setPassword(request.getPassword()); // TODO: hash password
 
-        MultipartFile file = request.getProfessionalCard();
+        MultipartFile file = request.getFile();
         if (file != null && !file.isEmpty()) {
             practitioner.setProfessionalCard(file.getBytes());
             practitioner.setProfessionalCardFileName(file.getOriginalFilename());
-            practitioner.setProfessionalCardFileType(file.getContentType());
         }
         practitioner.setVerified(false);
+        practitioner.setCreatedAt(LocalDateTime.now());
         practitionerRepository.save(practitioner);
 
         // Generate and send verification code
@@ -56,7 +63,7 @@ public class PractitionerService {
         verificationCode.setExpiresAt(LocalDateTime.now().plusMinutes(10));
         verificationCode.setUsed(false);
         verificationCodeRepository.save(verificationCode);
-        emailService.sendVerificationCode(practitioner.getEmail(), code);
+        emailService.sendOTPEmail(practitioner.getEmail(), code, "Vérification de votre compte praticien");
 
         return practitioner;
     }
