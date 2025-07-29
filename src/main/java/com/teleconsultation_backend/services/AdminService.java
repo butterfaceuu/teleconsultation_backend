@@ -13,29 +13,34 @@ import java.util.*;
 @Service
 public class AdminService {
     
-    @Autowired
-    private AdminRepository adminRepository;
+    private final AdminRepository adminRepository;
+    private final PractitionerRepository practitionerRepository;
+    private final PatientRepository patientRepository;
+    private final VerificationCodeRepository verificationCodeRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final PaymentRepository paymentRepository;
+    private final MessageRepository messageRepository;
     
     @Autowired
-    private PractitionerRepository practitionerRepository;
+    public AdminService(AdminRepository adminRepository,
+                       PractitionerRepository practitionerRepository,
+                       PatientRepository patientRepository,
+                       VerificationCodeRepository verificationCodeRepository,
+                       AppointmentRepository appointmentRepository,
+                       PaymentRepository paymentRepository,
+                       MessageRepository messageRepository,
+                       EmailService emailService) {
+        this.adminRepository = adminRepository;
+        this.practitionerRepository = practitionerRepository;
+        this.patientRepository = patientRepository;
+        this.verificationCodeRepository = verificationCodeRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.paymentRepository = paymentRepository;
+        this.messageRepository = messageRepository;
+        this.emailService = emailService;
+    }
     
-    @Autowired
-    private PatientRepository patientRepository;
-    
-    @Autowired
-    private VerificationCodeRepository verificationCodeRepository;
-    
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-    
-    @Autowired
-    private PaymentRepository paymentRepository;
-    
-    @Autowired
-    private MessageRepository messageRepository;
-    
-    @Autowired
-    private EmailService emailService;
+    private final EmailService emailService;
     
     public Map<String, Object> login(LoginRequest loginRequest) {
         Optional<Admin> adminOpt = adminRepository.findByEmail(loginRequest.getEmail());
@@ -93,10 +98,15 @@ public class AdminService {
                 
                 Optional<Admin> adminOpt = adminRepository.findByEmail(verificationRequest.getEmail());
                 
+                if (!adminOpt.isPresent()) {
+                    throw new RuntimeException("Admin non trouvé");
+                }
+                
+                Admin admin = adminOpt.get();
                 Map<String, Object> response = new HashMap<>();
                 response.put("message", "Connexion réussie");
-                response.put("admin", adminOpt.get());
-                response.put("token", generateToken(adminOpt.get())); // Vous pouvez implémenter JWT ici
+                response.put("admin", admin);
+                response.put("token", generateToken(admin)); // Vous pouvez implémenter JWT ici
                 
                 return response;
             } else {

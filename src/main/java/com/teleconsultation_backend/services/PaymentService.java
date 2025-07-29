@@ -1,8 +1,9 @@
 package com.teleconsultation_backend.services;
 
-import com.teleconsultation_backend.entities.*;
+import com.teleconsultation_backend.entities.Payment;
 import com.teleconsultation_backend.dtos.PaymentRequest;
-import com.teleconsultation_backend.repositories.*;
+import com.teleconsultation_backend.repositories.PaymentRepository;
+import com.teleconsultation_backend.repositories.AppointmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,14 +17,18 @@ import java.util.UUID;
 @Service
 public class PaymentService {
     
-    @Autowired
-    private PaymentRepository paymentRepository;
+    private final PaymentRepository paymentRepository;
+    private final AppointmentRepository appointmentRepository;
     
     @Autowired
-    private AppointmentRepository appointmentRepository;
+    public PaymentService(PaymentRepository paymentRepository,
+                         AppointmentRepository appointmentRepository) {
+        this.paymentRepository = paymentRepository;
+        this.appointmentRepository = appointmentRepository;
+    }
     
     public Map<String, String> createPaymentIntent(PaymentRequest request) {
-        Optional<Appointment> appointment = appointmentRepository.findById(request.getAppointmentId());
+        Optional<com.teleconsultation_backend.entities.Appointment> appointment = appointmentRepository.findById(request.getAppointmentId());
         if (appointment.isPresent()) {
             // Create payment record
             Payment payment = new Payment();

@@ -1,8 +1,12 @@
 package com.teleconsultation_backend.services;
 
-import com.teleconsultation_backend.entities.*;
+import com.teleconsultation_backend.entities.Message;
+import com.teleconsultation_backend.entities.Patient;
+import com.teleconsultation_backend.entities.Practitioner;
 import com.teleconsultation_backend.dtos.MessageRequest;
-import com.teleconsultation_backend.repositories.*;
+import com.teleconsultation_backend.repositories.MessageRepository;
+import com.teleconsultation_backend.repositories.PatientRepository;
+import com.teleconsultation_backend.repositories.PractitionerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,14 +17,18 @@ import java.util.Optional;
 @Service
 public class MessageService {
     
-    @Autowired
-    private MessageRepository messageRepository;
+    private final MessageRepository messageRepository;
+    private final PatientRepository patientRepository;
+    private final PractitionerRepository practitionerRepository;
     
     @Autowired
-    private PatientRepository patientRepository;
-    
-    @Autowired
-    private PractitionerRepository practitionerRepository;
+    public MessageService(MessageRepository messageRepository,
+                         PatientRepository patientRepository,
+                         PractitionerRepository practitionerRepository) {
+        this.messageRepository = messageRepository;
+        this.patientRepository = patientRepository;
+        this.practitionerRepository = practitionerRepository;
+    }
     
     public Message sendMessage(MessageRequest request) {
         Message message = new Message();
@@ -34,32 +42,20 @@ public class MessageService {
         
         // Set sender
         if (request.getSenderId() != null) {
-            Optional<Patient> patient = patientRepository.findById(request.getSenderId());
-            if (patient.isPresent()) {
-                message.setSenderPatient(patient.get());
-            }
-        }
-        
-        if (request.getSenderId() != null) {
-            Optional<Practitioner> practitioner = practitionerRepository.findById(request.getSenderId());
-            if (practitioner.isPresent()) {
-                message.setSenderPractitioner(practitioner.get());
-            }
+            patientRepository.findById(request.getSenderId())
+                .ifPresent(message::setSenderPatient);
+            
+            practitionerRepository.findById(request.getSenderId())
+                .ifPresent(message::setSenderPractitioner);
         }
         
         // Set receiver
         if (request.getReceiverId() != null) {
-            Optional<Patient> patient = patientRepository.findById(request.getReceiverId());
-            if (patient.isPresent()) {
-                message.setReceiverPatient(patient.get());
-            }
-        }
-        
-        if (request.getReceiverId() != null) {
-            Optional<Practitioner> practitioner = practitionerRepository.findById(request.getReceiverId());
-            if (practitioner.isPresent()) {
-                message.setReceiverPractitioner(practitioner.get());
-            }
+            patientRepository.findById(request.getReceiverId())
+                .ifPresent(message::setReceiverPatient);
+            
+            practitionerRepository.findById(request.getReceiverId())
+                .ifPresent(message::setReceiverPractitioner);
         }
         
         return messageRepository.save(message);
@@ -78,14 +74,13 @@ public class MessageService {
     }
     
     public Message markAsRead(Long messageId) {
-        Optional<Message> optionalMessage = messageRepository.findById(messageId);
-        if (optionalMessage.isPresent()) {
-            Message message = optionalMessage.get();
-            message.setRead(true);
-            message.setReadAt(LocalDateTime.now());
-            return messageRepository.save(message);
-        }
-        return null;
+        return messageRepository.findById(messageId)
+            .map(message -> {
+                message.setRead(true);
+                message.setReadAt(LocalDateTime.now());
+                return messageRepository.save(message);
+            })
+            .orElse(null);
     }
     
     public int getUnreadMessagesCountForPatient(Long patientId) {

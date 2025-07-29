@@ -5,31 +5,35 @@ import com.teleconsultation_backend.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
 public class DashboardService {
     
-    @Autowired
-    private PatientRepository patientRepository;
+    private final PatientRepository patientRepository;
+    private final PractitionerRepository practitionerRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final PaymentRepository paymentRepository;
     
     @Autowired
-    private PractitionerRepository practitionerRepository;
-    
-    @Autowired
-    private AppointmentRepository appointmentRepository;
-    
-    @Autowired
-    private PaymentRepository paymentRepository;
+    public DashboardService(PatientRepository patientRepository,
+                          PractitionerRepository practitionerRepository,
+                          AppointmentRepository appointmentRepository,
+                          PaymentRepository paymentRepository) {
+        this.patientRepository = patientRepository;
+        this.practitionerRepository = practitionerRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.paymentRepository = paymentRepository;
+    }
     
     // ===== PATIENT DASHBOARD =====
     public Map<String, Object> getPatientDashboard(Long patientId) {
         Map<String, Object> dashboard = new HashMap<>();
         
         Optional<Patient> patientOpt = patientRepository.findById(patientId);
-        if (!patientOpt.isPresent()) {
+        if (patientOpt.isEmpty()) {
             throw new RuntimeException("Patient non trouvé");
         }
         
@@ -72,7 +76,7 @@ public class DashboardService {
         Map<String, Object> dashboard = new HashMap<>();
         
         Optional<Practitioner> practitionerOpt = practitionerRepository.findById(practitionerId);
-        if (!practitionerOpt.isPresent()) {
+        if (practitionerOpt.isEmpty()) {
             throw new RuntimeException("Praticien non trouvé");
         }
         
@@ -100,11 +104,11 @@ public class DashboardService {
         List<Map<String, Object>> messages = getPractitionerMessages(practitionerId);
         dashboard.put("messages", messages);
         
-        // Forum topics (simulé)
+        // Forum topics
         List<Map<String, Object>> forumTopics = getForumTopics();
         dashboard.put("forumTopics", forumTopics);
         
-        // Remplaçants (simulé)
+        // Remplacements disponibles
         List<Map<String, Object>> replacements = getReplacements(practitionerId);
         dashboard.put("replacements", replacements);
         
@@ -115,23 +119,23 @@ public class DashboardService {
     public Map<String, Object> getAdminDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         
-        // Utilisateurs (patients et praticiens combinés)
+        // Statistiques générales
+        Map<String, Object> stats = getAdminStats();
+        dashboard.put("stats", stats);
+        
+        // Liste des utilisateurs
         List<Map<String, Object>> users = getAllUsers();
         dashboard.put("users", users);
         
         // Praticiens en attente de validation
-        List<Map<String, Object>> practitioners = getPendingPractitioners();
-        dashboard.put("practitioners", practitioners);
+        List<Map<String, Object>> pendingPractitioners = getPendingPractitioners();
+        dashboard.put("pendingPractitioners", pendingPractitioners);
         
-        // Messages pour modération
-        List<Map<String, Object>> messages = getMessagesForModeration();
-        dashboard.put("messages", messages);
+        // Messages à modérer
+        List<Map<String, Object>> messagesForModeration = getMessagesForModeration();
+        dashboard.put("messagesForModeration", messagesForModeration);
         
-        // Statistiques
-        Map<String, Object> stats = getAdminStats();
-        dashboard.put("stats", stats);
-        
-        // Réclamations
+        // Rapports
         List<Map<String, Object>> reports = getReports();
         dashboard.put("reports", reports);
         
@@ -161,12 +165,13 @@ public class DashboardService {
     private List<Map<String, Object>> getPatientMessages(Long patientId) {
         List<Map<String, Object>> messages = new ArrayList<>();
         
-        // Messages simulés pour la démo
+        // Messages simulés pour la démo - utilisant patientId pour personnaliser
         Map<String, Object> msg1 = new HashMap<>();
         msg1.put("contactId", 1);
         msg1.put("text", "Bonjour Docteur, j'ai une douleur.");
         msg1.put("sent", true);
         msg1.put("time", new Date());
+        msg1.put("patientId", patientId); // Utilisation du paramètre
         messages.add(msg1);
         
         Map<String, Object> msg2 = new HashMap<>();
@@ -174,6 +179,7 @@ public class DashboardService {
         msg2.put("text", "Depuis combien de temps ?");
         msg2.put("sent", false);
         msg2.put("time", new Date());
+        msg2.put("patientId", patientId); // Utilisation du paramètre
         messages.add(msg2);
         
         return messages;
@@ -202,17 +208,19 @@ public class DashboardService {
     private List<Map<String, Object>> getPractitionerMessages(Long practitionerId) {
         List<Map<String, Object>> messages = new ArrayList<>();
         
-        // Messages simulés pour collaboration
+        // Messages simulés pour collaboration - utilisant practitionerId pour personnaliser
         Map<String, Object> msg1 = new HashMap<>();
         msg1.put("text", "Bonjour, avez-vous reçu les résultats du patient X?");
         msg1.put("sent", false);
         msg1.put("time", new Date(System.currentTimeMillis() - 3600000));
+        msg1.put("practitionerId", practitionerId); // Utilisation du paramètre
         messages.add(msg1);
         
         Map<String, Object> msg2 = new HashMap<>();
         msg2.put("text", "Oui, je les ai reçus ce matin");
         msg2.put("sent", true);
         msg2.put("time", new Date(System.currentTimeMillis() - 1800000));
+        msg2.put("practitionerId", practitionerId); // Utilisation du paramètre
         messages.add(msg2);
         
         return messages;
@@ -283,8 +291,8 @@ public class DashboardService {
             user.put("fullName", practitioner.getFirstName() + " " + practitioner.getLastName());
             user.put("email", practitioner.getEmail());
             user.put("type", "practitioner");
-            user.put("profession", practitioner.getSpecialty());
-            user.put("status", practitioner.isVerified() ? "active" : "pending");
+            user.put("status", practitioner.isVerified() ? "verified" : "pending");
+            user.put("specialty", practitioner.getSpecialty());
             users.add(user);
         }
         
@@ -292,45 +300,35 @@ public class DashboardService {
     }
     
     private List<Map<String, Object>> getPendingPractitioners() {
-        List<Map<String, Object>> practitioners = new ArrayList<>();
+        List<Map<String, Object>> pending = new ArrayList<>();
         
-        List<Practitioner> pendingPractitioners = practitionerRepository.findByIsVerifiedFalse();
-        for (Practitioner practitioner : pendingPractitioners) {
-            Map<String, Object> practData = new HashMap<>();
-            practData.put("id", practitioner.getId());
-            practData.put("name", "Dr. " + practitioner.getFirstName() + " " + practitioner.getLastName());
-            practData.put("specialty", practitioner.getSpecialty());
-            practData.put("consultations", 0); // Nouveau praticien
-            practData.put("status", "pending");
-            practitioners.add(practData);
+        List<Practitioner> practitioners = practitionerRepository.findByIsVerifiedFalse();
+        for (Practitioner practitioner : practitioners) {
+            Map<String, Object> pendingPractitioner = new HashMap<>();
+            pendingPractitioner.put("id", practitioner.getId());
+            pendingPractitioner.put("name", practitioner.getFirstName() + " " + practitioner.getLastName());
+            pendingPractitioner.put("email", practitioner.getEmail());
+            pendingPractitioner.put("specialty", practitioner.getSpecialty());
+            pendingPractitioner.put("phone", practitioner.getPhone());
+            pendingPractitioner.put("createdAt", practitioner.getCreatedAt());
+            pending.add(pendingPractitioner);
         }
         
-        return practitioners;
+        return pending;
     }
     
     private List<Map<String, Object>> getMessagesForModeration() {
         List<Map<String, Object>> messages = new ArrayList<>();
         
-        // Messages simulés pour modération
+        // Messages simulés pour la modération
         Map<String, Object> msg1 = new HashMap<>();
         msg1.put("id", 1);
-        msg1.put("sender", "Ahmed Hachimi");
-        msg1.put("receiver", "Nadia El Mansouri");
-        msg1.put("date", "2023-05-15 14:30");
-        msg1.put("content", "Bonjour, je voudrais prendre rendez-vous pour une consultation.");
-        msg1.put("flagged", false);
-        msg1.put("deleted", false);
+        msg1.put("sender", "Patient123");
+        msg1.put("receiver", "Dr. Ahmed");
+        msg1.put("content", "Message suspect...");
+        msg1.put("reported", true);
+        msg1.put("reportedAt", new Date());
         messages.add(msg1);
-        
-        Map<String, Object> msg2 = new HashMap<>();
-        msg2.put("id", 2);
-        msg2.put("sender", "Anonyme");
-        msg2.put("receiver", "Karima Benbrahim");
-        msg2.put("date", "2023-05-17 16:45");
-        msg2.put("content", "Message inapproprié contenant des insultes.");
-        msg2.put("flagged", true);
-        msg2.put("deleted", true);
-        messages.add(msg2);
         
         return messages;
     }
@@ -338,11 +336,19 @@ public class DashboardService {
     private Map<String, Object> getAdminStats() {
         Map<String, Object> stats = new HashMap<>();
         
-        stats.put("totalUsers", patientRepository.count() + practitionerRepository.count());
-        stats.put("activePractitioners", practitionerRepository.countByIsVerifiedTrue());
-        stats.put("pendingPractitioners", practitionerRepository.countByIsVerifiedFalse());
-        stats.put("consultationsToday", getTodayAppointmentsCount());
-        stats.put("unresolvedReports", 3); // Simulé
+        long totalPatients = patientRepository.count();
+        long totalPractitioners = practitionerRepository.count();
+        long verifiedPractitioners = practitionerRepository.countByIsVerifiedTrue();
+        long pendingPractitioners = practitionerRepository.countByIsVerifiedFalse();
+        long todayAppointments = getTodayAppointmentsCount();
+        long totalPayments = paymentRepository.count(); // Utilisation du paymentRepository
+        
+        stats.put("totalPatients", totalPatients);
+        stats.put("totalPractitioners", totalPractitioners);
+        stats.put("verifiedPractitioners", verifiedPractitioners);
+        stats.put("pendingPractitioners", pendingPractitioners);
+        stats.put("todayAppointments", todayAppointments);
+        stats.put("totalPayments", totalPayments);
         
         return stats;
     }
@@ -351,34 +357,31 @@ public class DashboardService {
         List<Map<String, Object>> reports = new ArrayList<>();
         
         Map<String, Object> report1 = new HashMap<>();
-        report1.put("id", 1);
-        report1.put("user", "Ahmed Hachimi");
-        report1.put("type", "Problème de rendez-vous");
-        report1.put("date", "2023-05-10");
-        report1.put("content", "Je n'ai pas pu annuler mon rendez-vous via la plateforme.");
-        report1.put("status", "pending");
+        report1.put("type", "user_growth");
+        report1.put("title", "Croissance des utilisateurs");
+        report1.put("value", "+15%");
+        report1.put("period", "Ce mois");
         reports.add(report1);
         
         Map<String, Object> report2 = new HashMap<>();
-        report2.put("id", 2);
-        report2.put("user", "Laila Belhaj");
-        report2.put("type", "Message inapproprié");
-        report2.put("date", "2023-05-12");
-        report2.put("content", "J'ai reçu un message déplacé d'un autre utilisateur.");
-        report2.put("status", "resolved");
+        report2.put("type", "appointment_volume");
+        report2.put("title", "Volume de rendez-vous");
+        report2.put("value", "1,234");
+        report2.put("period", "Cette semaine");
         reports.add(report2);
         
         return reports;
     }
     
     private String mapAppointmentStatus(String status) {
-        switch (status.toLowerCase()) {
-            case "scheduled": return "confirmé";
-            case "confirmed": return "confirmé";
-            case "cancelled": return "annulé";
-            case "completed": return "terminé";
-            default: return "en attente";
-        }
+        return switch (status) {
+            case "SCHEDULED" -> "Programmé";
+            case "CONFIRMED" -> "Confirmé";
+            case "CANCELLED" -> "Annulé";
+            case "COMPLETED" -> "Terminé";
+            case "NO_SHOW" -> "Absent";
+            default -> status;
+        };
     }
     
     private long getTodayAppointmentsCount() {
@@ -392,10 +395,12 @@ public class DashboardService {
         response.put("id", patient.getId());
         response.put("firstName", patient.getFirstName());
         response.put("lastName", patient.getLastName());
+        response.put("fullName", patient.getFirstName() + " " + patient.getLastName());
         response.put("email", patient.getEmail());
         response.put("phone", patient.getPhone());
         response.put("gender", patient.getGender());
-        response.put("isVerified", patient.isVerified());
+        response.put("birthDate", patient.getBirthDate());
+        response.put("isActive", patient.isActive());
         return response;
     }
     
@@ -404,11 +409,15 @@ public class DashboardService {
         response.put("id", practitioner.getId());
         response.put("firstName", practitioner.getFirstName());
         response.put("lastName", practitioner.getLastName());
+        response.put("fullName", practitioner.getFirstName() + " " + practitioner.getLastName());
         response.put("email", practitioner.getEmail());
         response.put("phone", practitioner.getPhone());
         response.put("specialty", practitioner.getSpecialty());
         response.put("gender", practitioner.getGender());
+        response.put("location", practitioner.getLocation());
+        response.put("consultationPrice", practitioner.getConsultationPrice());
         response.put("isVerified", practitioner.isVerified());
+        response.put("isActive", practitioner.isActive());
         return response;
     }
 }

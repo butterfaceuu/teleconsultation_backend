@@ -1,11 +1,7 @@
 package com.teleconsultation_backend.services;
 
-import com.teleconsultation_backend.entities.Domain;
-import com.teleconsultation_backend.entities.Specialty;
-import com.teleconsultation_backend.entities.Practitioner;
-import com.teleconsultation_backend.repositories.DomainRepository;
-import com.teleconsultation_backend.repositories.SpecialtyRepository;
-import com.teleconsultation_backend.repositories.PractitionerRepository;
+import com.teleconsultation_backend.entities.*;
+import com.teleconsultation_backend.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,17 +11,21 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class ChatbotService {
     
-    @Autowired
-    private DomainRepository domainRepository;
+    private final DomainRepository domainRepository;
+    private final SpecialtyRepository specialtyRepository;
+    private final PractitionerRepository practitionerRepository;
+    private final ChatbotQuestionsService questionsService;
     
     @Autowired
-    private SpecialtyRepository specialtyRepository;
-    
-    @Autowired
-    private PractitionerRepository practitionerRepository;
-    
-    @Autowired
-    private ChatbotQuestionsService questionsService;
+    public ChatbotService(DomainRepository domainRepository,
+                         SpecialtyRepository specialtyRepository,
+                         PractitionerRepository practitionerRepository,
+                         ChatbotQuestionsService questionsService) {
+        this.domainRepository = domainRepository;
+        this.specialtyRepository = specialtyRepository;
+        this.practitionerRepository = practitionerRepository;
+        this.questionsService = questionsService;
+    }
     
     // Sessions de chat en mémoire
     private final Map<String, ChatSession> chatSessions = new ConcurrentHashMap<>();

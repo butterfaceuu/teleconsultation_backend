@@ -1,29 +1,29 @@
 package com.teleconsultation_backend.services;
 
-import com.teleconsultation_backend.entities.Domain;
-import com.teleconsultation_backend.entities.Specialty;
-import com.teleconsultation_backend.entities.Practitioner;
-import com.teleconsultation_backend.repositories.DomainRepository;
-import com.teleconsultation_backend.repositories.SpecialtyRepository;
-import com.teleconsultation_backend.repositories.PractitionerRepository;
+import com.teleconsultation_backend.entities.*;
+import com.teleconsultation_backend.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
-import java.util.*;
 import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 public class DomainService {
     
-    @Autowired
-    private DomainRepository domainRepository;
+    private final DomainRepository domainRepository;
+    private final SpecialtyRepository specialtyRepository;
+    private final PractitionerRepository practitionerRepository;
     
     @Autowired
-    private SpecialtyRepository specialtyRepository;
-    
-    @Autowired
-    private PractitionerRepository practitionerRepository;
+    public DomainService(DomainRepository domainRepository, 
+                        SpecialtyRepository specialtyRepository, 
+                        PractitionerRepository practitionerRepository) {
+        this.domainRepository = domainRepository;
+        this.specialtyRepository = specialtyRepository;
+        this.practitionerRepository = practitionerRepository;
+    }
     
     @PostConstruct
     public void initializeDefaultDomains() {

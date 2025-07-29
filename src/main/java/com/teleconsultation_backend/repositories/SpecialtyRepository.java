@@ -16,7 +16,14 @@ public interface SpecialtyRepository extends JpaRepository<Specialty, Long> {
     
     List<Specialty> findByDomainNameAndActiveTrue(String domainName);
     
+    // Méthodes utilisées par DomainService
+    List<Specialty> findByDomainIdAndActiveTrue(Long domainId);
+    
+    Optional<Specialty> findByNameAndDomainId(String name, Long domainId);
+    
     List<Specialty> findByNameContainingIgnoreCase(String name);
+    
+    List<Specialty> findByNameContainingIgnoreCaseAndActiveTrue(String name);
     
     List<Specialty> findByActiveTrue();
     

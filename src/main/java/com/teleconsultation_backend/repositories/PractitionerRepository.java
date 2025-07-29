@@ -2,6 +2,8 @@ package com.teleconsultation_backend.repositories;
 
 import com.teleconsultation_backend.entities.Practitioner;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
@@ -16,6 +18,8 @@ public interface PractitionerRepository extends JpaRepository<Practitioner, Long
     
     Optional<Practitioner> findByEmailAndIsVerifiedTrue(String email);
     
+    boolean existsByEmail(String email);
+    
     // Méthodes pour la recherche
     List<Practitioner> findBySpecialtyContainingIgnoreCase(String specialty);
     
@@ -25,7 +29,17 @@ public interface PractitionerRepository extends JpaRepository<Practitioner, Long
     
     List<Practitioner> findBySourceAndIsVerifiedTrue(String source);
     
+    // Méthodes utilisées par DomainService
+    List<Practitioner> findBySpecialtyEntityIdAndIsVerifiedTrue(Long specialtyId);
+    
+    @Query("SELECT p FROM Practitioner p WHERE (LOWER(p.firstName) LIKE LOWER(CONCAT('%', :firstName, '%')) OR LOWER(p.lastName) LIKE LOWER(CONCAT('%', :lastName, '%'))) AND p.isVerified = true")
+    List<Practitioner> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseAndIsVerifiedTrue(@Param("firstName") String firstName, @Param("lastName") String lastName);
+    
+    long countBySpecialtyEntityIdAndIsVerifiedTrue(Long specialtyId);
+    
     // Méthodes pour l'administration
+    List<Practitioner> findByIsVerifiedTrue();
+    
     List<Practitioner> findByIsVerifiedFalse();
     
     List<Practitioner> findByIsActiveTrue();
@@ -40,6 +54,9 @@ public interface PractitionerRepository extends JpaRepository<Practitioner, Long
     long countByIsActiveTrue();
     
     long countByIsActiveFalse();
+    
+    // Méthodes pour les statistiques temporelles
+    long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
     
     // Méthodes pour la recherche avancée
     List<Practitioner> findBySpecialtyContainingIgnoreCaseAndIsVerifiedTrue(String specialty);

@@ -18,14 +18,18 @@ import java.util.UUID;
 @Service
 public class FileUploadService {
     
-    @Autowired
-    private DocumentRepository documentRepository;
+    private final DocumentRepository documentRepository;
+    private final PatientRepository patientRepository;
+    private final PractitionerRepository practitionerRepository;
     
     @Autowired
-    private PatientRepository patientRepository;
-    
-    @Autowired
-    private PractitionerRepository practitionerRepository;
+    public FileUploadService(DocumentRepository documentRepository,
+                            PatientRepository patientRepository,
+                            PractitionerRepository practitionerRepository) {
+        this.documentRepository = documentRepository;
+        this.patientRepository = patientRepository;
+        this.practitionerRepository = practitionerRepository;
+    }
     
     private final String uploadDir = "uploads/";
     

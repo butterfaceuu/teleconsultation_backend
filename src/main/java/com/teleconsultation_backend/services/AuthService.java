@@ -1,7 +1,7 @@
 package com.teleconsultation_backend.services;
 
-import com.teleconsultation_backend.entities.*;
 import com.teleconsultation_backend.dtos.*;
+import com.teleconsultation_backend.entities.*;
 import com.teleconsultation_backend.repositories.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,20 +17,24 @@ import java.util.*;
 @Service
 public class AuthService {
     
-    @Autowired
-    private PatientRepository patientRepository;
+    private final PatientRepository patientRepository;
+    private final PractitionerRepository practitionerRepository;
+    private final AdminRepository adminRepository;
+    private final VerificationCodeRepository verificationCodeRepository;
+    private final EmailService emailService;
     
     @Autowired
-    private PractitionerRepository practitionerRepository;
-    
-    @Autowired
-    private AdminRepository adminRepository;
-    
-    @Autowired
-    private VerificationCodeRepository verificationCodeRepository;
-    
-    @Autowired
-    private EmailService emailService;
+    public AuthService(PatientRepository patientRepository,
+                      PractitionerRepository practitionerRepository,
+                      AdminRepository adminRepository,
+                      VerificationCodeRepository verificationCodeRepository,
+                      EmailService emailService) {
+        this.patientRepository = patientRepository;
+        this.practitionerRepository = practitionerRepository;
+        this.adminRepository = adminRepository;
+        this.verificationCodeRepository = verificationCodeRepository;
+        this.emailService = emailService;
+    }
     
     private final String uploadDir = "uploads/";
     

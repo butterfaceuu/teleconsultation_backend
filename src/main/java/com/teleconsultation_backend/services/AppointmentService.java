@@ -1,8 +1,12 @@
 package com.teleconsultation_backend.services;
 
-import com.teleconsultation_backend.entities.*;
+import com.teleconsultation_backend.entities.Appointment;
+import com.teleconsultation_backend.entities.Patient;
+import com.teleconsultation_backend.entities.Practitioner;
 import com.teleconsultation_backend.dtos.AppointmentRequest;
-import com.teleconsultation_backend.repositories.*;
+import com.teleconsultation_backend.repositories.AppointmentRepository;
+import com.teleconsultation_backend.repositories.PatientRepository;
+import com.teleconsultation_backend.repositories.PractitionerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,14 +17,18 @@ import java.util.Optional;
 @Service
 public class AppointmentService {
     
-    @Autowired
-    private AppointmentRepository appointmentRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final PatientRepository patientRepository;
+    private final PractitionerRepository practitionerRepository;
     
     @Autowired
-    private PatientRepository patientRepository;
-    
-    @Autowired
-    private PractitionerRepository practitionerRepository;
+    public AppointmentService(AppointmentRepository appointmentRepository,
+                            PatientRepository patientRepository,
+                            PractitionerRepository practitionerRepository) {
+        this.appointmentRepository = appointmentRepository;
+        this.patientRepository = patientRepository;
+        this.practitionerRepository = practitionerRepository;
+    }
     
     public Appointment createAppointment(AppointmentRequest request) {
         Optional<Patient> patient = patientRepository.findById(request.getPatientId());

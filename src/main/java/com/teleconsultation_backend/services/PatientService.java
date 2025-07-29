@@ -16,12 +16,19 @@ import java.util.UUID;
 
 @Service
 public class PatientService {
+    
+    private final PatientRepository patientRepository;
+    private final VerificationCodeRepository verificationCodeRepository;
+    private final EmailService emailService;
+    
     @Autowired
-    private PatientRepository patientRepository;
-    @Autowired
-    private VerificationCodeRepository verificationCodeRepository;
-    @Autowired
-    private EmailService emailService;
+    public PatientService(PatientRepository patientRepository,
+                         VerificationCodeRepository verificationCodeRepository,
+                         EmailService emailService) {
+        this.patientRepository = patientRepository;
+        this.verificationCodeRepository = verificationCodeRepository;
+        this.emailService = emailService;
+    }
 
     public Patient registerPatient(PatientRegistrationRequest request) throws Exception {
         if (patientRepository.findByEmail(request.getEmail()).isPresent()) {
